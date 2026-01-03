@@ -1,0 +1,43 @@
+{
+  "usuarios": {
+    "y0Br2G4GgnWgyDkdhYc7OLJlm3H2": {
+      "nombre": "Usuario Demo",
+      "correo": "demo@example.com",
+      "avatar": null,
+      "rango": "principiante",
+      "monedas": 0,
+      "nivel": 1,
+      "tipo_cuenta": "free",
+      "fecha_registro": "2025-01-01T00:00:00"
+    }
+  },
+  "recordatorios": {
+    "rec1": {
+      "id_usuario": "y0Br2G4GgnWgyDkdhYc7OLJlm3H2",
+      "nombre": "Recordatorio demo",
+      "descripcion": "Este es un recordatorio de prueba cargado desde el seed",
+      "fecha": "2025-12-25",
+      "hora": "12:00",
+      "estado": false,
+      "prioridad": "media",
+      "notificacion": true,
+      "repeticion": "ninguna",
+      "tipo": "personal",
+      "color": "azul",
+      "fecha_creacion": "2025-12-24T15:00:00"
+    }
+  },
+  "notas": {
+    "n1": {
+      "id_usuario": "y0Br2G4GgnWgyDkdhYc7OLJlm3H2",
+      "id_plantilla": "p1",
+      "titulo": "Nota de ejemplo",
+      "contenido": "Contenido demo",
+      "etiqueta": "general",
+      "estado": "activa",
+      "favorita": false,
+      "fecha_creacion": "2025-01-01T00:00:00",
+      "fecha_modificacion": "2025-01-01T00:00:00"
+    }
+  }
+}
