@@ -1,10 +1,29 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flasgger import Swagger
 from firebase_admin import auth
 from firebase_admin_init import init_firebase
 
 app = Flask(__name__)
 CORS(app)
+
+# --- CONFIGURACIÓN DE SWAGGER ---
+# Esto habilita el botón "Authorize" para probar tokens de Firebase
+app.config['SWAGGER'] = {
+    'title': 'API de Recordatorios',
+    'uiversion': 3,
+    'securityDefinitions': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'Escribe: "Bearer <tu_token_aqui>"'
+        }
+    },
+    'security': [{'Bearer': []}]
+}
+
+swagger = Swagger(app)
 
 db = init_firebase()
 
@@ -21,12 +40,42 @@ def require_firebase_user():
 
 @app.get("/health")
 def health():
+    """
+    Verificar estado del servidor.
+    ---
+    tags:
+      - General
+    responses:
+      200:
+        description: Servidor funcionando
+    """
     return {"ok": True}
 
-# -------- REMINDERS --------
+# ==========================================
+# --------       REMINDERS        --------
+# ==========================================
 
 @app.get("/reminders")
 def list_reminders():
+    """
+    Listar recordatorios del usuario.
+    ---
+    tags:
+      - Recordatorios
+    security:
+      - Bearer: []
+    parameters:
+      - name: tipo
+        in: query
+        type: string
+        required: false
+        description: Filtrar por tipo (ej. personal, trabajo)
+    responses:
+      200:
+        description: Lista de recordatorios
+      401:
+        description: Token inválido o faltante
+    """
     user, err = require_firebase_user()
     if err:
         return jsonify({"error": err[0]}), err[1]
@@ -49,6 +98,55 @@ def list_reminders():
 
 @app.post("/reminders")
 def create_reminder():
+    """
+    Crear un nuevo recordatorio.
+    ---
+    tags:
+      - Recordatorios
+    security:
+      - Bearer: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - nombre
+            - fecha
+            - hora
+          properties:
+            nombre:
+              type: string
+              example: "Comprar leche"
+            fecha:
+              type: string
+              example: "2023-12-31"
+            hora:
+              type: string
+              example: "15:30"
+            descripcion:
+              type: string
+            prioridad:
+              type: string
+              example: "alta"
+            archivos:
+              type: array
+              items:
+                type: string
+              description: Lista de URLs o rutas de archivos
+            tipo:
+              type: string
+              example: "personal"
+            color:
+              type: string
+              example: "azul"
+    responses:
+      201:
+        description: Recordatorio creado
+      400:
+        description: Faltan datos obligatorios
+    """
     user, err = require_firebase_user()
     if err:
         return jsonify({"error": err[0]}), err[1]
@@ -90,6 +188,39 @@ def create_reminder():
 
 @app.put("/reminders/<rid>")
 def update_reminder(rid):
+    """
+    Actualizar un recordatorio existente.
+    ---
+    tags:
+      - Recordatorios
+    security:
+      - Bearer: []
+    parameters:
+      - name: rid
+        in: path
+        type: string
+        required: true
+        description: ID del recordatorio
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            nombre:
+              type: string
+            estado:
+              type: boolean
+            archivos:
+              type: array
+              items:
+                type: string
+    responses:
+      200:
+        description: Actualizado correctamente
+      404:
+        description: No encontrado
+    """
     user, err = require_firebase_user()
     if err:
         return jsonify({"error": err[0]}), err[1]
@@ -125,6 +256,22 @@ def update_reminder(rid):
 
 @app.delete("/reminders/<rid>")
 def delete_reminder(rid):
+    """
+    Eliminar un recordatorio.
+    ---
+    tags:
+      - Recordatorios
+    security:
+      - Bearer: []
+    parameters:
+      - name: rid
+        in: path
+        type: string
+        required: true
+    responses:
+      200:
+        description: Eliminado
+    """
     user, err = require_firebase_user()
     if err:
         return jsonify({"error": err[0]}), err[1]
@@ -142,10 +289,23 @@ def delete_reminder(rid):
     ref.delete()
     return jsonify({"deleted": True})
 
+# ==========================================
 # -------- SECTIONS (CATEGORÍAS) --------
+# ==========================================
 
 @app.get("/sections")
 def list_sections():
+    """
+    Listar secciones (categorías).
+    ---
+    tags:
+      - Secciones
+    security:
+      - Bearer: []
+    responses:
+      200:
+        description: Lista de secciones ordenada alfabéticamente
+    """
     user, err = require_firebase_user()
     if err: return jsonify({"error": err[0]}), err[1]
     
@@ -167,6 +327,32 @@ def list_sections():
 
 @app.post("/sections")
 def create_section():
+    """
+    Crear una nueva sección.
+    ---
+    tags:
+      - Secciones
+    security:
+      - Bearer: []
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - nombre
+          properties:
+            nombre:
+              type: string
+              example: "Trabajo"
+            color:
+              type: integer
+              example: 4280391411
+    responses:
+      201:
+        description: Sección creada
+    """
     user, err = require_firebase_user()
     if err: return jsonify({"error": err[0]}), err[1]
     
@@ -192,6 +378,32 @@ def create_section():
 
 @app.put("/sections/<sid>")
 def update_section(sid):
+    """
+    Actualizar una sección.
+    ---
+    tags:
+      - Secciones
+    security:
+      - Bearer: []
+    parameters:
+      - name: sid
+        in: path
+        required: true
+        type: string
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            nombre:
+              type: string
+            color:
+              type: integer
+    responses:
+      200:
+        description: Sección actualizada
+    """
     user, err = require_firebase_user()
     if err: return jsonify({"error": err[0]}), err[1]
 
@@ -215,6 +427,22 @@ def update_section(sid):
 
 @app.delete("/sections/<sid>")
 def delete_section(sid):
+    """
+    Eliminar una sección.
+    ---
+    tags:
+      - Secciones
+    security:
+      - Bearer: []
+    parameters:
+      - name: sid
+        in: path
+        required: true
+        type: string
+    responses:
+      200:
+        description: Sección eliminada
+    """
     user, err = require_firebase_user()
     if err: return jsonify({"error": err[0]}), err[1]
 
